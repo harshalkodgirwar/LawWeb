@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #FDFBF7;
+    --foreground: #1A1F2C;
+    --navy-950: #080D1A;
+    --navy-900: #0B132B;
+    --navy-800: #1C2541;
+    --navy-700: #3A506B;
+    --gold-300: #E5C378;
+    --gold-400: #D4AF37;
+    --gold-500: #C5A059;
+    --gold-600: #B38A38;
+    --gold-700: #8E6D24;
+    --charcoal-800: #1E2229;
+    --charcoal-900: #13171F;
+    --parchment: #F6F3EB;
+    --card-bg: #FFFFFF;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-serif {
+  font-family: var(--font-serif), Georgia, Cambria, serif;
+}
+
+/* Legal crest and editorial aesthetics */
+.legal-gold-border {
+  border-color: rgba(197, 160, 89, 0.35);
+}
+
+.legal-gold-gradient {
+  background: linear-gradient(135deg, #C5A059 0%, #E5C378 50%, #B38A38 100%);
+}
+
+.legal-navy-gradient {
+  background: linear-gradient(145deg, #080D1A 0%, #0B132B 60%, #1C2541 100%);
+}
+
+.legal-card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(11, 19, 43, 0.05), 0 2px 6px -1px rgba(11, 19, 43, 0.02);
+}
+
+.legal-card-shadow-hover:hover {
+  box-shadow: 0 12px 30px -4px rgba(11, 19, 43, 0.12), 0 4px 10px -2px rgba(197, 160, 89, 0.15);
+}
+
+/* Subtle parchment paper texture effect */
+.parchment-pattern {
+  background-color: #F8F6F0;
+  background-image: radial-gradient(rgba(197, 160, 89, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1EFE9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C5A059;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B38A38;
 }
