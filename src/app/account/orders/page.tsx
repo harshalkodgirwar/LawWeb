@@ -31,27 +31,8 @@ export default function MyOrdersPage() {
       }
     }
 
-    // Default sample orders for verified customer
-    setOrders([
-      {
-        id: "ord-1",
-        order_number: "ORD-948120",
-        product_title: "Constitutional Law of India: Master Revision & Judiciary Notes",
-        amount_paise: 69900,
-        status: "completed",
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-        razorpay_payment_id: "pay_PkN9418294901",
-      },
-      {
-        id: "ord-2",
-        order_number: "ORD-839104",
-        product_title: "New Criminal Laws Handbook: BNS, BNSS & BSA Comparative Analysis",
-        amount_paise: 79900,
-        status: "completed",
-        created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-        razorpay_payment_id: "pay_QmP1049284102",
-      },
-    ]);
+    // If no orders yet, leave as empty array (no demo data)
+    setOrders([]);
     setLoading(false);
   }, []);
 

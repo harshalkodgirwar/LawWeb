@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface ProductPageProps {
   params: Promise<{
     slug: string;

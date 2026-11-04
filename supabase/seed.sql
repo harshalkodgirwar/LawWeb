@@ -21,7 +21,7 @@ INSERT INTO public.products (
 )
 VALUES 
 (
-    'p1111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
     'Constitutional Law of India: Master Revision & Judiciary Notes',
     'constitutional-law-master-notes',
     'Exhaustive, section-by-section analysis of Articles 1 to 395 with 140+ landmark Supreme Court precedents, doctrine flowcharts, and mains model answers.',
@@ -44,7 +44,7 @@ VALUES
     284
 ),
 (
-    'p2222222-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
     'New Criminal Laws Handbook: BNS, BNSS & BSA Comparative Analysis (2024-2026)',
     'new-criminal-laws-handbook-bns-bnss-bsa',
     'The definitive transition manual comparing IPC to Bharatiya Nyaya Sanhita, CrPC to Bharatiya Nagarik Suraksha Sanhita, and IEA to Bharatiya Sakshya Adhiniyam.',
@@ -67,7 +67,7 @@ VALUES
     512
 ),
 (
-    'p3333333-3333-3333-3333-333333333333',
+    '33333333-3333-3333-3333-333333333333',
     'Code of Civil Procedure (CPC) & Limitation Act: Visual Flowcharts & Case Notes',
     'cpc-civil-procedure-flowcharts-notes',
     'De-mystify complex civil litigation procedure. Complete with 80+ visual flowcharts, Order-Rule cheat sheets, Res Judicata doctrines, and Execution templates.',
@@ -90,7 +90,7 @@ VALUES
     198
 ),
 (
-    'p4444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
     'Judiciary Mains Master Answer-Writing Framework & Judgment Writing',
     'judiciary-mains-answer-writing-framework',
     'The proprietary answer-structuring methodology that helped 70+ students clear State Judicial Services. Includes civil & criminal judgment writing blueprints.',
@@ -125,10 +125,28 @@ VALUES
         "secondaryCta": "About My Practice"
     }'::jsonb),
     ('profile', '{
+        "name": "Adv. Harshal Kodgirwar",
+        "designation": "Advocate, Supreme Court of India & High Court | Legal Educator",
         "qualifications": "B.A. LL.B (Hons.), LL.M (Constitutional & Administrative Law)",
         "barCouncilNumber": "MAH/2841/2016",
-        "courts": "Supreme Court of India, Delhi High Court & Bombay High Court",
-        "experience": "10+ Years in Litigation & Legal Academics",
-        "communitySize": "150,000+ Students & Followers"
+        "bio": "With over a decade of litigation experience across the High Court and Supreme Court of India, Adv. Harshal has dedicated his professional career to bridging the gap between rigorous courtroom practice and academic excellence. Through his legal education initiatives, YouTube channel, and structured study compendiums, he mentors over 150,000+ law students, judicial aspirants, and young practitioners across India.",
+        "socials": {
+            "youtube": "https://youtube.com/@harshalkodgirwar",
+            "instagram": "https://instagram.com/adv.harshal",
+            "linkedin": "https://linkedin.com/in/harshal-kodgirwar",
+            "telegram": "https://t.me/legalnotescommunity"
+        },
+        "stats": {
+            "studentsMentored": "150,000+",
+            "materialsDistributed": "45,000+",
+            "judicialOfficersProduced": "180+",
+            "yearsInLitigation": "10+ Years"
+        },
+        "contact": {
+            "email": "contact@advharshal.com",
+            "supportEmail": "support@advharshal.com",
+            "officeLocation": "Chambers at Supreme Court of India & High Court Bench, New Delhi / Mumbai",
+            "hours": "Monday – Saturday: 10:00 AM – 7:00 PM IST"
+        }
     }'::jsonb)
 ON CONFLICT (section_key) DO NOTHING;

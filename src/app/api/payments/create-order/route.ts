@@ -73,7 +73,9 @@ export async function POST(request: Request) {
 
     // 4. Create Razorpay order with secret credentials
     const razorpay = getRazorpayClient();
-    let razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    let realRazorpayOrderId: string | null = null;
+    let fallbackOrderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    let razorpayError: string | null = null;
 
     if (razorpay) {
       try {
@@ -87,17 +89,25 @@ export async function POST(request: Request) {
             user_id: effectiveUserId,
           },
         });
-        razorpayOrderId = razorpayOrder.id;
+        realRazorpayOrderId = razorpayOrder.id;
       } catch (err: any) {
-        console.error("Razorpay order creation error:", err);
+        razorpayError =
+          err?.error?.description ||
+          err?.message ||
+          "Razorpay API rejected credentials with HTTP 401 Authentication Failed";
+        console.error("Razorpay order creation error:", razorpayError, err);
       }
+    } else {
+      razorpayError = "Razorpay API keys not configured or using default placeholders";
     }
 
     return NextResponse.json({
       success: true,
       orderId: internalOrderId,
       orderNumber,
-      razorpayOrderId,
+      razorpayOrderId: realRazorpayOrderId || fallbackOrderId,
+      isRazorpayLive: Boolean(realRazorpayOrderId),
+      razorpayError,
       amountPaise: orderAmountPaise,
       currency: "INR",
       keyId: getPublicRazorpayKey(),

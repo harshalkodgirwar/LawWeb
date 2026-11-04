@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Scale, Lock, Mail, User, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  saveRegisteredUser,
+  setCurrentUser,
+  isSupabaseConfigured,
+  AuthUser,
+} from "@/lib/auth-helpers";
 
 function RegisterForm() {
   const router = useRouter();
@@ -24,47 +30,77 @@ function RegisterForm() {
     setLoading(true);
     setError("");
 
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = fullName.trim();
+
+    if (!trimmedName) {
+      setError("Please enter your full name.");
+      setLoading(false);
+      return;
+    }
+
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Passwords do not match. Please verify and retype.");
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Password must be at least 6 characters in length.");
       setLoading(false);
       return;
     }
 
     try {
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: "customer",
-          },
-        },
+      // 1. Save user to registered users database
+      const newUser = saveRegisteredUser({
+        email: trimmedEmail,
+        fullName: trimmedName,
+        passwordHash: password,
       });
 
-      if (authError) {
-        // Fallback for local demo mode
-        const mockUser = {
-          id: "mock-student-" + Date.now(),
-          email,
-          role: "customer",
-          user_metadata: { full_name: fullName, role: "customer" },
-        };
-        localStorage.setItem("demo_user", JSON.stringify(mockUser));
-        setSuccess(true);
-        setTimeout(() => router.push(redirectUrl), 1000);
-        return;
+      // 2. Also register in Supabase if live credentials are configured
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = createClient();
+          await supabase.auth.signUp({
+            email: trimmedEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: trimmedName,
+                role: "customer",
+              },
+            },
+          });
+        } catch (sbErr) {
+          console.warn("Supabase background registration notice:", sbErr);
+        }
       }
 
+      // 3. Immediately sign in the new user
+      const userSession: AuthUser = {
+        id: newUser.id,
+        email: newUser.email,
+        role: "customer",
+        user_metadata: {
+          full_name: newUser.fullName,
+          role: "customer",
+        },
+      };
+
+      setCurrentUser(userSession);
       setSuccess(true);
-      setTimeout(() => router.push(redirectUrl), 1500);
+
+      setTimeout(() => {
+        router.push(redirectUrl);
+      }, 1000);
     } catch (err: any) {
       setError(err.message || "Failed to create account. Please try again.");
     } finally {
@@ -91,16 +127,16 @@ function RegisterForm() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-stone-200 shadow-md space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>Account created successfully! Redirecting you now...</span>
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Account created successfully! Redirecting to your library...</span>
             </div>
           )}
 
@@ -114,7 +150,7 @@ function RegisterForm() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Pooja Sharma"
+                  placeholder="e.g. Priyanshu Verma"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:bg-white text-stone-900"
@@ -131,7 +167,7 @@ function RegisterForm() {
                 <input
                   type="email"
                   required
-                  placeholder="pooja@example.com"
+                  placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:bg-white text-stone-900"
@@ -141,7 +177,7 @@ function RegisterForm() {
 
             <div>
               <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Password
+                Create Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
@@ -175,10 +211,10 @@ function RegisterForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || success}
               className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white font-bold text-xs sm:text-sm shadow-md transition-all border border-[#C5A059]/40"
             >
-              <span>{loading ? "Creating Account..." : "Register & Continue"}</span>
+              <span>{loading ? "Creating Account..." : "Create Account & Enter Library"}</span>
               <ArrowRight className="w-4 h-4 text-[#E5C378]" />
             </button>
           </form>
@@ -189,7 +225,7 @@ function RegisterForm() {
               href={`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`}
               className="font-bold text-[#0B132B] hover:underline"
             >
-              Sign In
+              Sign In Here
             </Link>
           </div>
         </div>
@@ -200,7 +236,13 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-xs font-mono text-stone-500">Loading registration...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-xs font-mono text-stone-500">
+          Loading sign up...
+        </div>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );

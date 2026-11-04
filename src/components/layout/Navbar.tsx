@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Scale, BookOpen, User, Menu, X, ArrowRight, ShieldCheck, LogOut, FileText, ShoppingBag } from "lucide-react";
+import { Scale, BookOpen, ShoppingBag, User, LogOut, ShieldCheck, Menu, X, ArrowRight, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/lib/useProfile";
+import { getCurrentUser, clearCurrentUser, checkIsAdmin, AuthUser } from "@/lib/auth-helpers";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -16,41 +17,50 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    // Check local storage mock session or Supabase session
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUser(data.user);
-        // Check admin
-        if (data.user.email?.includes("admin") || data.user.user_metadata?.role === "admin") {
-          setIsAdmin(true);
-        }
-      } else {
-        // Check for local demo user session if in demo mode
-        const demoUser = typeof window !== "undefined" ? localStorage.getItem("demo_user") : null;
-        if (demoUser) {
-          try {
-            const parsed = JSON.parse(demoUser);
-            setUser(parsed);
-            if (parsed.role === "admin" || parsed.email?.includes("admin")) {
-              setIsAdmin(true);
-            }
-          } catch {
-            // ignore
-          }
-        }
+    const syncUser = () => {
+      // 1. Check local session
+      const localUser = getCurrentUser();
+      if (localUser) {
+        setUser(localUser);
+        setIsAdmin(checkIsAdmin(localUser));
+        return;
       }
-    });
 
+      // 2. Check Supabase session
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          setUser(data.user);
+          if (data.user.email?.includes("admin") || data.user.user_metadata?.role === "admin") {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+        }
+      });
+    };
+
+    syncUser();
+
+    // Listen to local auth updates across tabs and within active session
+    window.addEventListener("auth_state_changed", syncUser);
+    window.addEventListener("storage", syncUser);
+
+    const supabase = createClient();
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
         setUser(session.user);
         if (session.user.email?.includes("admin") || session.user.user_metadata?.role === "admin") {
           setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
         }
       } else {
-        const demoUser = typeof window !== "undefined" ? localStorage.getItem("demo_user") : null;
-        if (!demoUser) {
+        const local = getCurrentUser();
+        if (!local) {
           setUser(null);
           setIsAdmin(false);
         }
@@ -58,15 +68,19 @@ export default function Navbar() {
     });
 
     return () => {
+      window.removeEventListener("auth_state_changed", syncUser);
+      window.removeEventListener("storage", syncUser);
       authListener?.subscription.unsubscribe();
     };
   }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("demo_user");
+    clearCurrentUser();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
     }
     setUser(null);
     setIsAdmin(false);
@@ -88,41 +102,41 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#080D1A]/95 backdrop-blur-md border-b border-[#C5A059]/25 text-white shadow-lg transition-all">
-      {/* Top Banner Notice for Students */}
-      <div className="bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] border-b border-[#C5A059]/15 py-1 text-center text-xs text-stone-300">
-        <span className="text-[#E5C378] font-semibold tracking-wide uppercase mr-2 text-[10px] px-2 py-0.5 rounded bg-[#C5A059]/20 border border-[#C5A059]/30">
-          New Edition 2026
+    <header className="sticky top-0 z-50 bg-[#080D1A]/95 backdrop-blur-md border-b border-[#C5A059]/30 text-white transition-all">
+      {/* Top Notification Bar */}
+      <div className="bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] text-[11px] text-stone-300 py-1.5 px-4 text-center border-b border-white/5 font-mono tracking-wide">
+        <span className="inline-block bg-[#C5A059] text-[#080D1A] font-bold px-1.5 py-0.2 rounded mr-2 uppercase text-[10px]">
+          NEW EDITION 2026
         </span>
         BNS, BNSS & Bharatiya Sakshya Adhiniyam notes now available for Judiciary & LL.B.
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo / Lawyer Branding */}
+          {/* Logo & Lawyer Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-[#1C2541] to-[#0B132B] border border-[#C5A059]/50 flex items-center justify-center text-[#E5C378] shadow-md group-hover:border-[#E5C378] transition-colors">
-              <Scale className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1C2541] to-[#0B132B] border border-[#C5A059] flex items-center justify-center text-[#E5C378] shadow-lg group-hover:scale-105 transition-all">
+              <Scale className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-serif text-lg sm:text-xl font-bold tracking-tight text-white group-hover:text-[#E5C378] transition-colors">
+              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-white block leading-none group-hover:text-[#E5C378] transition-colors">
                 {profile.name || "Adv. Harshal Kodgirwar"}
-              </div>
-              <div className="text-[11px] font-mono text-[#C5A059] tracking-wider uppercase">
-                {profile.designation || "Supreme Court Advocate & Legal Educator"}
-              </div>
+              </span>
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-stone-400 font-mono mt-0.5 block truncate max-w-[280px] sm:max-w-[360px]">
+                {profile.designation || "Advocate, Supreme Court of India & Legal Educator"}
+              </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <nav className="hidden lg:flex items-center space-x-1">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-3.5 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-medium tracking-wide transition-colors ${
                   isActive(link.href)
-                    ? "text-[#E5C378] bg-white/10 shadow-sm"
+                    ? "text-[#E5C378] bg-white/5 font-semibold"
                     : "text-stone-300 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -134,75 +148,105 @@ export default function Navbar() {
           {/* Right Action / Auth & Cart */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#1C2541] border border-[#C5A059]/40 hover:border-[#E5C378] text-sm text-stone-200 transition-all focus:outline-none"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#C5A059] text-[#080D1A] font-bold text-xs flex items-center justify-center">
-                    {user.email?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                  <span className="max-w-[120px] truncate text-xs font-medium">
-                    {user.user_metadata?.full_name || user.email?.split("@")[0] || "Account"}
-                  </span>
-                </button>
-
-                {/* Dropdown Menu */}
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[#0B132B] border border-[#C5A059]/40 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                    <div className="px-4 py-2 border-b border-white/10">
-                      <p className="text-xs text-stone-400">Signed in as</p>
-                      <p className="text-xs font-semibold text-white truncate">{user.email}</p>
-                    </div>
-
-                    <Link
-                      href="/account/library"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-200 hover:bg-white/10 hover:text-[#E5C378] transition-colors"
-                    >
-                      <BookOpen className="w-4 h-4 text-[#C5A059]" />
-                      My Study Library
-                    </Link>
-
-                    <Link
-                      href="/account/orders"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-200 hover:bg-white/10 hover:text-[#E5C378] transition-colors"
-                    >
-                      <ShoppingBag className="w-4 h-4 text-[#C5A059]" />
-                      My Orders & Receipts
-                    </Link>
-
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#E5C378] bg-[#C5A059]/10 font-medium hover:bg-[#C5A059]/20 transition-colors"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-[#E5C378]" />
-                        Admin Dashboard
-                      </Link>
-                    )}
-
-                    <div className="border-t border-white/10 my-1" />
-
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  </div>
+              <div className="flex items-center space-x-3">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#C5A059]/15 hover:bg-[#C5A059]/25 text-[#E5C378] text-xs font-bold border border-[#C5A059]/40 transition-colors shadow-sm"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#E5C378]" />
+                    <span>Admin Console</span>
+                  </Link>
                 )}
+
+                <div className="relative">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#1C2541] border border-[#C5A059]/40 hover:border-[#E5C378] text-sm text-stone-200 transition-all focus:outline-none"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-[#C5A059] text-[#080D1A] font-bold text-xs flex items-center justify-center">
+                      {user.email?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    <span className="max-w-[130px] truncate text-xs font-medium">
+                      {user.user_metadata?.full_name || user.email?.split("@")[0] || "Account"}
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-[#0B132B] border border-[#C5A059]/40 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-4 py-2 border-b border-white/10">
+                        <p className="text-xs text-stone-400">Signed in as</p>
+                        <p className="text-xs font-semibold text-white truncate">{user.email}</p>
+                        <span className="inline-block mt-1 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-white/10 text-[#E5C378]">
+                          {isAdmin ? "Administrator" : "Student Member"}
+                        </span>
+                      </div>
+
+                      <Link
+                        href="/account/library"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-200 hover:bg-white/10 hover:text-[#E5C378] transition-colors"
+                      >
+                        <BookOpen className="w-4 h-4 text-[#C5A059]" />
+                        My Study Library
+                      </Link>
+
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-200 hover:bg-white/10 hover:text-[#E5C378] transition-colors"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-[#C5A059]" />
+                        My Orders & Receipts
+                      </Link>
+
+                      <Link
+                        href="/account/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-200 hover:bg-white/10 hover:text-[#E5C378] transition-colors"
+                      >
+                        <User className="w-4 h-4 text-[#C5A059]" />
+                        Account Profile
+                      </Link>
+
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#E5C378] bg-[#C5A059]/10 font-bold hover:bg-[#C5A059]/20 transition-colors"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-[#E5C378]" />
+                          Chambers Admin Panel
+                        </Link>
+                      )}
+
+                      <div className="border-t border-white/10 my-1" />
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2.5">
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2 text-xs font-medium text-stone-300 hover:text-white transition-colors"
+                  className="px-3.5 py-2 text-xs font-medium text-stone-300 hover:text-white transition-colors"
                 >
                   Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-stone-200 text-xs font-semibold border border-white/10 transition-colors"
+                >
+                  Sign Up
                 </Link>
                 <Link
                   href="/materials"
@@ -216,7 +260,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md text-stone-300 hover:text-white hover:bg-white/10 focus:outline-none"
@@ -230,7 +274,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-[#C5A059]/20 bg-[#080D1A] px-4 pt-3 pb-6 space-y-2">
+        <div className="lg:hidden border-t border-[#C5A059]/20 bg-[#080D1A] px-4 pt-3 pb-6 space-y-2">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -249,6 +293,10 @@ export default function Navbar() {
           <div className="pt-4 border-t border-white/10 space-y-2">
             {user ? (
               <>
+                <div className="px-3 py-2 bg-white/5 rounded-lg mb-2">
+                  <p className="text-xs text-stone-400">Signed in as</p>
+                  <p className="text-xs font-semibold text-white truncate">{user.email}</p>
+                </div>
                 <Link
                   href="/account/library"
                   onClick={() => setMobileMenuOpen(false)}
@@ -265,14 +313,22 @@ export default function Navbar() {
                   <ShoppingBag className="w-4 h-4 text-[#C5A059]" />
                   My Orders
                 </Link>
+                <Link
+                  href="/account/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-stone-200 hover:bg-white/5 text-sm"
+                >
+                  <User className="w-4 h-4 text-[#C5A059]" />
+                  Account Profile
+                </Link>
                 {isAdmin && (
                   <Link
                     href="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md text-[#E5C378] font-medium bg-[#C5A059]/15 text-sm"
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-[#E5C378] font-bold bg-[#C5A059]/15 text-sm"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    Admin Dashboard
+                    Admin Console
                   </Link>
                 )}
                 <button
@@ -297,7 +353,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-center px-4 py-2 bg-gradient-to-r from-[#C5A059] to-[#E5C378] rounded-lg text-sm font-bold text-[#080D1A]"
                 >
-                  Register
+                  Sign Up
                 </Link>
               </div>
             )}

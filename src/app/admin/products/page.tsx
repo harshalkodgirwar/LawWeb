@@ -19,6 +19,10 @@ import {
   ExternalLink,
   RefreshCw,
   AlertCircle,
+  UploadCloud,
+  FileUp,
+  Trash2,
+  Paperclip,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -48,6 +52,63 @@ export default function AdminProductsPage() {
   const [pageCount, setPageCount] = useState(300);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
+
+  // PDF Attachment states
+  const [pdfStoragePath, setPdfStoragePath] = useState("");
+  const [previewStoragePath, setPreviewStoragePath] = useState("");
+  const [attachedPdfName, setAttachedPdfName] = useState("");
+  const [attachedPreviewName, setAttachedPreviewName] = useState("");
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadingPreview, setUploadingPreview] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  const handlePdfUpload = async (file: File, type: "material" | "preview") => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setUploadError("Only .pdf documents are supported for study materials.");
+      return;
+    }
+
+    setUploadError("");
+    if (type === "material") {
+      setUploadingPdf(true);
+    } else {
+      setUploadingPreview(true);
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+      formData.append("slug", slug || title || "material");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to upload PDF");
+      }
+
+      if (type === "material") {
+        setPdfStoragePath(data.storagePath);
+        setAttachedPdfName(data.fileName);
+      } else {
+        setPreviewStoragePath(data.storagePath);
+        setAttachedPreviewName(data.fileName);
+      }
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to attach PDF document.");
+    } finally {
+      if (type === "material") {
+        setUploadingPdf(false);
+      } else {
+        setUploadingPreview(false);
+      }
+    }
+  };
 
   // Load products on mount from API & localStorage
   useEffect(() => {
@@ -98,6 +159,11 @@ export default function AdminProductsPage() {
     setPageCount(300);
     setIsFeatured(false);
     setIsPublished(true);
+    setPdfStoragePath("");
+    setPreviewStoragePath("");
+    setAttachedPdfName("");
+    setAttachedPreviewName("");
+    setUploadError("");
     setModalOpen(true);
   };
 
@@ -113,6 +179,11 @@ export default function AdminProductsPage() {
     setPageCount(prod.page_count || 250);
     setIsFeatured(prod.is_featured);
     setIsPublished(prod.is_published);
+    setPdfStoragePath(prod.pdf_storage_path || "");
+    setPreviewStoragePath(prod.preview_storage_path || "");
+    setAttachedPdfName(prod.pdf_storage_path ? prod.pdf_storage_path.split("/").pop() || "" : "");
+    setAttachedPreviewName(prod.preview_storage_path ? prod.preview_storage_path.split("/").pop() || "" : "");
+    setUploadError("");
     setModalOpen(true);
   };
 
@@ -127,6 +198,9 @@ export default function AdminProductsPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
 
+    const finalPdfPath = pdfStoragePath || editingProduct?.pdf_storage_path || `materials/${generatedSlug}.pdf`;
+    const finalPreviewPath = previewStoragePath || editingProduct?.preview_storage_path || `previews/${generatedSlug}_preview.pdf`;
+
     const productPayload: Product = {
       id: editingProduct ? editingProduct.id : "prod-" + Date.now(),
       title,
@@ -137,8 +211,8 @@ export default function AdminProductsPage() {
       original_price_paise: originalPricePaise,
       category_id: categoryId,
       cover_image_path: editingProduct?.cover_image_path || "/covers/generic-legal-cover.png",
-      pdf_storage_path: editingProduct?.pdf_storage_path || `materials/${generatedSlug}.pdf`,
-      preview_storage_path: editingProduct?.preview_storage_path || `previews/${generatedSlug}_preview.pdf`,
+      pdf_storage_path: finalPdfPath,
+      preview_storage_path: finalPreviewPath,
       page_count: pageCount,
       file_format: "PDF",
       topics: editingProduct?.topics || [{ title: "Foundational Doctrines" }],
@@ -361,7 +435,26 @@ export default function AdminProductsPage() {
               {filteredProducts.map((p) => (
                 <tr key={p.id} className="hover:bg-stone-50/70">
                   <td className="py-3.5 px-4 max-w-sm">
-                    <div className="font-bold text-stone-900 leading-snug">{p.title}</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-stone-900 leading-snug">{p.title}</span>
+                      {p.pdf_storage_path ? (
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+                          title={`Attached PDF: ${p.pdf_storage_path}`}
+                        >
+                          <Paperclip className="w-2.5 h-2.5 text-emerald-600" />
+                          PDF Attached
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"
+                          title="No sellable PDF file attached yet"
+                        >
+                          <AlertCircle className="w-2.5 h-2.5 text-amber-600" />
+                          No PDF Attached
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-[#B38A38] font-mono mt-0.5">
                       {p.slug} • {p.is_featured ? "Featured Bestseller" : "Standard"}
                     </div>
@@ -536,6 +629,140 @@ export default function AdminProductsPage() {
                     onChange={(e) => setPageCount(Number(e.target.value))}
                     className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-mono"
                   />
+                </div>
+              </div>
+
+              {/* --- ATTACH STUDY MATERIAL PDF (CRITICAL FIELD TO SELL DIGITAL PRODUCT) --- */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/50 via-stone-50 to-amber-50/20 border-2 border-[#C5A059]/40 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#080D1A] text-[#E5C378] flex items-center justify-center shadow">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif font-bold text-stone-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>Attach Study Material (PDF to Sell)</span>
+                        <span className="text-amber-600 font-sans text-xs">*</span>
+                      </h4>
+                      <p className="text-[11px] text-stone-500">
+                        Upload the full-resolution PDF handbook that paying students will unlock and download.
+                      </p>
+                    </div>
+                  </div>
+
+                  {pdfStoragePath && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-full border border-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Attached
+                    </span>
+                  )}
+                </div>
+
+                {uploadError && (
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[11px] flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                {/* File attached view vs Dropzone */}
+                {pdfStoragePath ? (
+                  <div className="p-3 bg-white rounded-xl border border-stone-200 shadow-sm flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 font-bold text-[11px] flex items-center justify-center shrink-0 border border-red-200">
+                        PDF
+                      </div>
+                      <div className="truncate">
+                        <div className="font-semibold text-stone-900 text-xs truncate">
+                          {attachedPdfName || pdfStoragePath.split("/").pop()}
+                        </div>
+                        <div className="text-[10px] text-stone-400 font-mono truncate">
+                          Path: {pdfStoragePath}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {pdfStoragePath.startsWith("/uploads/") && (
+                        <a
+                          href={pdfStoragePath}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1.5 rounded-lg text-[11px] text-stone-700 hover:text-stone-900 hover:bg-stone-100 font-medium border border-stone-200 inline-flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>View</span>
+                        </a>
+                      )}
+                      <label className="cursor-pointer px-2.5 py-1.5 rounded-lg text-[11px] bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium inline-flex items-center gap-1 transition-colors">
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Replace</span>
+                        <input
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          className="hidden"
+                          disabled={uploadingPdf}
+                          onChange={(e) => e.target.files?.[0] && handlePdfUpload(e.target.files[0], "material")}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPdfStoragePath("");
+                          setAttachedPdfName("");
+                        }}
+                        className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                        title="Remove attached PDF"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="border-2 border-dashed border-stone-300 hover:border-[#C5A059] bg-white rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-amber-50/30 group">
+                    <UploadCloud className="w-8 h-8 text-stone-400 group-hover:text-[#C5A059] group-hover:scale-110 transition-all mb-1.5" />
+                    <span className="font-semibold text-stone-800 text-xs group-hover:text-[#0B132B]">
+                      {uploadingPdf ? "Uploading & Securing PDF..." : "Click to Browse & Attach Study Material PDF"}
+                    </span>
+                    <span className="text-[10px] text-stone-400 mt-0.5 font-mono">
+                      Accepts .pdf format &bull; Direct secure delivery upon payment
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="hidden"
+                      disabled={uploadingPdf}
+                      onChange={(e) => e.target.files?.[0] && handlePdfUpload(e.target.files[0], "material")}
+                    />
+                  </label>
+                )}
+
+                {/* Optional Free Sample / Preview PDF */}
+                <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-stone-400" />
+                    <span className="text-stone-600 font-medium text-[11px]">
+                      Optional Sample Preview PDF:
+                    </span>
+                    {previewStoragePath ? (
+                      <span className="text-emerald-700 font-mono text-[10px] font-semibold">
+                        {attachedPreviewName || previewStoragePath.split("/").pop()}
+                      </span>
+                    ) : (
+                      <span className="text-stone-400 text-[10px] italic">None attached</span>
+                    )}
+                  </div>
+
+                  <label className="cursor-pointer text-[11px] font-semibold text-[#8E6D24] hover:underline inline-flex items-center gap-1">
+                    <FileUp className="w-3 h-3" />
+                    <span>{uploadingPreview ? "Uploading..." : previewStoragePath ? "Change Sample" : "Attach Sample Excerpt"}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="hidden"
+                      disabled={uploadingPreview}
+                      onChange={(e) => e.target.files?.[0] && handlePdfUpload(e.target.files[0], "preview")}
+                    />
+                  </label>
                 </div>
               </div>
 

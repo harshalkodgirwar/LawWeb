@@ -6,7 +6,15 @@ import { serverStore } from "../db/server-store";
 export function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return Boolean(url && key && !url.includes("placeholder-project"));
+  return Boolean(
+    url &&
+    key &&
+    !url.includes("placeholder-project") &&
+    !url.includes("your-project-id") &&
+    !url.includes("example.com") &&
+    !key.includes("...") &&
+    key.length > 50
+  );
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -35,9 +43,15 @@ export async function getProducts(options?: {
   isFeatured?: boolean;
   search?: string;
   sortBy?: "newest" | "price_asc" | "price_desc" | "popularity";
+  includeUnpublished?: boolean;
 }): Promise<Product[]> {
   if (!isSupabaseConfigured()) {
     let results = serverStore.getProducts();
+
+    // Hide draft/unpublished products from public unless explicitly included
+    if (!options?.includeUnpublished) {
+      results = results.filter((p) => p.is_published !== false);
+    }
 
     if (options?.categoryId && options.categoryId !== "all") {
       results = results.filter((p) => p.category_id === options.categoryId);
@@ -118,35 +132,57 @@ export async function getProducts(options?: {
     }
 
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      return SEED_PRODUCTS;
+    if (error) {
+      console.warn("Supabase query error:", error.message);
+      // Fallback to serverStore respecting unpublished filter
+      let fallback = serverStore.getProducts();
+      if (!options?.includeUnpublished) {
+        fallback = fallback.filter((p) => p.is_published !== false);
+      }
+      return fallback;
     }
 
-    return data as Product[];
-  } catch {
-    return SEED_PRODUCTS;
+    let results = (data || []) as Product[];
+    if (!options?.includeUnpublished) {
+      results = results.filter((p) => p.is_published !== false);
+    }
+    return results;
+  } catch (err) {
+    console.warn("Supabase getProducts exception:", err);
+    let fallback = serverStore.getProducts();
+    if (!options?.includeUnpublished) {
+      fallback = fallback.filter((p) => p.is_published !== false);
+    }
+    return fallback;
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string, allowUnpublished: boolean = false): Promise<Product | null> {
   if (!isSupabaseConfigured()) {
-    const found = serverStore.getProductBySlug(slug) || SEED_PRODUCTS.find((p) => p.slug === slug);
+    const found = serverStore.getProductBySlug(slug) || serverStore.getProductById(slug);
     if (!found) return null;
+    if (!allowUnpublished && found.is_published === false) return null;
     const cat = SEED_CATEGORIES.find((c) => c.id === found.category_id);
     return { ...found, category: cat };
   }
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("products")
       .select("*, category:categories(*)")
-      .eq("slug", slug)
-      .single();
+      .eq("slug", slug);
+
+    if (!allowUnpublished) {
+      query = query.eq("is_published", true);
+    }
+
+    const { data, error } = await query.single();
 
     if (error || !data) {
-      const fallback = serverStore.getProductBySlug(slug) || SEED_PRODUCTS.find((p) => p.slug === slug);
+      const fallback = serverStore.getProductBySlug(slug) || serverStore.getProductById(slug);
       if (fallback) {
+        if (!allowUnpublished && fallback.is_published === false) return null;
         const cat = SEED_CATEGORIES.find((c) => c.id === fallback.category_id);
         return { ...fallback, category: cat };
       }
@@ -155,14 +191,16 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
     return data as Product;
   } catch {
-    const fallback = serverStore.getProductBySlug(slug) || SEED_PRODUCTS.find((p) => p.slug === slug);
-    return fallback || null;
+    const fallback = serverStore.getProductBySlug(slug) || serverStore.getProductById(slug);
+    if (!fallback) return null;
+    if (!allowUnpublished && fallback.is_published === false) return null;
+    return fallback;
   }
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
   if (!isSupabaseConfigured()) {
-    const found = serverStore.getProductById(id) || SEED_PRODUCTS.find((p) => p.id === id);
+    const found = serverStore.getProductById(id) || serverStore.getProductBySlug(id);
     if (!found) return null;
     const cat = SEED_CATEGORIES.find((c) => c.id === found.category_id);
     return { ...found, category: cat };
@@ -177,13 +215,13 @@ export async function getProductById(id: string): Promise<Product | null> {
       .single();
 
     if (error || !data) {
-      const fallback = serverStore.getProductById(id) || SEED_PRODUCTS.find((p) => p.id === id);
+      const fallback = serverStore.getProductById(id) || serverStore.getProductBySlug(id);
       return fallback || null;
     }
 
     return data as Product;
   } catch {
-    const fallback = serverStore.getProductById(id) || SEED_PRODUCTS.find((p) => p.id === id);
+    const fallback = serverStore.getProductById(id) || serverStore.getProductBySlug(id);
     return fallback || null;
   }
 }

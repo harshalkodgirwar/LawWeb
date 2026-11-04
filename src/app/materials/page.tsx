@@ -16,6 +16,8 @@ interface MarketplacePageProps {
   }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function MarketplacePage({ searchParams }: MarketplacePageProps) {
   const resolvedParams = await searchParams;
   const categories = await getCategories();

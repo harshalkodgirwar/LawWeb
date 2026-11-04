@@ -1,0 +1,521 @@
+{
+  "profile": {
+    "name": "Ritesh Sonatakke",
+    "designation": "Advocate, High Court | Legal Educator",
+    "qualifications": "B.A. LL.B (Hons.), LL.M (Constitutional & Administrative Law)",
+    "barCouncilNumber": "",
+    "bio": "With over a decade of litigation experience across the High Court and Supreme Court of India, Adv. Harshal has dedicated his professional career to bridging the gap between rigorous courtroom practice and academic excellence. Through his legal education initiatives, YouTube channel, and structured study compendiums, he mentors over 150,000+ law students, judicial aspirants, and young practitioners across India.",
+    "socials": {
+      "youtube": "https://youtube.com/@harshalkodgirwar",
+      "instagram": "https://instagram.com/adv.harshal",
+      "linkedin": "https://linkedin.com/in/harshal-kodgirwar",
+      "twitter": "https://x.com/adv_harshal",
+      "telegram": "https://t.me/legalnotescommunity"
+    },
+    "stats": {
+      "studentsMentored": "150,000+",
+      "materialsDistributed": "45,000+",
+      "judicialOfficersProduced": "180+",
+      "yearsInLitigation": "10+ Years"
+    },
+    "contact": {
+      "email": "contact@advharshal.com",
+      "supportEmail": "support@advharshal.com",
+      "officeLocation": "Chambers at Supreme Court of India & High Court Bench, New Delhi / Mumbai",
+      "hours": "Monday – Saturday: 10:00 AM – 7:00 PM IST"
+    }
+  },
+  "products": [
+    {
+      "id": "prod-1793793245975",
+      "title": "test",
+      "slug": "test",
+      "short_description": "test",
+      "description": "test",
+      "price_paise": 69900,
+      "original_price_paise": 129900,
+      "category_id": "cat-1",
+      "cover_image_path": "/covers/generic-legal-cover.png",
+      "pdf_storage_path": "/uploads/materials/langchain_notes_1793793224347.pdf",
+      "preview_storage_path": "previews/test_preview.pdf",
+      "page_count": 300,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Foundational Doctrines"
+        }
+      ],
+      "target_audience": [
+        "Judiciary Aspirants",
+        "Law Students"
+      ],
+      "learning_outcomes": [
+        "Comprehensive doctrinal mastery"
+      ],
+      "is_featured": true,
+      "is_published": true,
+      "sales_count": 0,
+      "rating": 5,
+      "reviews_count": 0,
+      "created_at": "2026-11-04T11:54:05.975Z",
+      "updated_at": "2026-11-04T11:54:05.989Z"
+    },
+    {
+      "id": "prod-1793792724774",
+      "title": "Landmark Supreme Court Judgments 2024-2026",
+      "slug": "landmark-supreme-court-judgments-2024-2026",
+      "short_description": "Exclusive case notes and ratio decidendi summaries.",
+      "description": "In-depth case notes, analysis of key constitutional rulings, and practice questions for aspirants.",
+      "price_paise": 59900,
+      "original_price_paise": 129900,
+      "category_id": "cat-1",
+      "cover_image_path": "/covers/generic-legal-cover.png",
+      "pdf_storage_path": "materials/landmark-supreme-court-judgments-2024-2026.pdf",
+      "preview_storage_path": "previews/landmark-supreme-court-judgments-2024-2026_preview.pdf",
+      "page_count": 180,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Foundational Doctrines"
+        }
+      ],
+      "target_audience": [
+        "Judiciary Aspirants",
+        "Law Students"
+      ],
+      "learning_outcomes": [
+        "Comprehensive doctrinal mastery"
+      ],
+      "is_featured": false,
+      "is_published": true,
+      "sales_count": 0,
+      "rating": 5,
+      "reviews_count": 0,
+      "created_at": "2026-11-04T11:45:24.774Z",
+      "updated_at": "2026-11-04T11:45:24.787Z"
+    },
+    {
+      "id": "prod-1793789692892",
+      "title": "Test Legal Notes 2026",
+      "slug": "test-legal-notes-2026",
+      "short_description": "Comprehensive notes for supreme court exam prep.",
+      "description": "Detailed syllabus breakdown including constitutional case laws, landmark rulings, and academic commentary for judiciary aspirants.",
+      "price_paise": 69900,
+      "original_price_paise": 129900,
+      "category_id": "cat-1",
+      "cover_image_path": "/covers/generic-legal-cover.png",
+      "pdf_storage_path": "materials/test-legal-notes-2026.pdf",
+      "preview_storage_path": "previews/test-legal-notes-2026_preview.pdf",
+      "page_count": 300,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Foundational Doctrines"
+        }
+      ],
+      "target_audience": [
+        "Judiciary Aspirants",
+        "Law Students"
+      ],
+      "learning_outcomes": [
+        "Comprehensive doctrinal mastery"
+      ],
+      "is_featured": false,
+      "is_published": true,
+      "sales_count": 0,
+      "rating": 5,
+      "reviews_count": 0,
+      "created_at": "2026-11-04T10:54:52.892Z",
+      "updated_at": "2026-11-04T10:54:52.932Z"
+    },
+    {
+      "id": "prod-1793789033445",
+      "title": "Testing Study Material",
+      "slug": "Testing",
+      "short_description": "Testing",
+      "description": "Testing",
+      "price_paise": 3900,
+      "original_price_paise": 12900,
+      "category_id": "cat-1",
+      "cover_image_path": "/covers/generic-legal-cover.png",
+      "pdf_storage_path": "materials/Testing.pdf",
+      "preview_storage_path": "previews/Testing_preview.pdf",
+      "page_count": 30,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Foundational Doctrines"
+        }
+      ],
+      "target_audience": [
+        "Judiciary Aspirants",
+        "Law Students"
+      ],
+      "learning_outcomes": [
+        "Comprehensive doctrinal mastery"
+      ],
+      "is_featured": true,
+      "is_published": true,
+      "sales_count": 0,
+      "rating": 5,
+      "reviews_count": 0,
+      "created_at": "2026-11-04T10:43:53.445Z",
+      "updated_at": "2026-11-04T10:43:53.459Z"
+    },
+    {
+      "id": "prod-const-law-master",
+      "title": "Constitutional Law of India: Master Revision & Judiciary Notes",
+      "slug": "constitutional-law-master-notes",
+      "short_description": "Exhaustive, section-by-section analysis of Articles 1 to 395 with 140+ landmark Supreme Court precedents, doctrine flowcharts, and mains model answers.",
+      "description": "A master study compendium prepared exclusively for State Judicial Services aspirants, UPSC Law Optional candidates, and LL.B/LL.M scholars. \n\nThis comprehensive volume distills complex constitutional doctrines into structured, exam-oriented frameworks. It provides side-by-side comparative tables for historical constitutional developments, exhaustive coverage of Part III (Fundamental Rights), the Basic Structure Doctrine from *Kesavananda Bharati* to *Minerva Mills*, and a specialized treatise on Article 32 & 226 prerogative writs with practical drafting notes.\n\nEvery chapter concludes with previous 10 years' solved mains questions from Delhi, UP, MP, and Bihar Judiciary, accompanied by high-scoring structural templates.",
+      "price_paise": 69900,
+      "original_price_paise": 129900,
+      "category_id": "cat-1",
+      "cover_image_path": "/covers/const-law-cover.png",
+      "pdf_storage_path": "materials/constitutional_law_master_notes_v3.pdf",
+      "preview_storage_path": "previews/constitutional_law_preview.pdf",
+      "page_count": 384,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Part I & II: Territory of India & Citizenship Jurisprudence",
+          "subtopics": [
+            "Articles 1-4 constitutional boundaries",
+            "CAA 2019 legal challenges & Article 11 scope"
+          ]
+        },
+        {
+          "title": "Part III: Fundamental Rights Doctrines",
+          "subtopics": [
+            "Doctrine of Severability & Eclipse (Art. 13)",
+            "Article 14 Golden Triangle & Wednesbury test",
+            "Article 19 Reasonable Restrictions standard",
+            "Article 21 Transformative jurisprudence: Puttaswamy to Navtej Johar"
+          ]
+        },
+        {
+          "title": "Prerogative Writs (Articles 32 & 226)",
+          "subtopics": [
+            "Habeas Corpus, Mandamus, Quo Warranto, Certiorari, Prohibition",
+            "Comparative scope of SC vs HC writ powers"
+          ]
+        },
+        {
+          "title": "Federal Architecture & Emergency Powers",
+          "subtopics": [
+            "Legislative relations (Arts. 245-255)",
+            "SR Bommai guidelines for Article 356",
+            "Financial Emergency procedures"
+          ]
+        },
+        {
+          "title": "Constitutional Amendments & Basic Structure",
+          "subtopics": [
+            "Article 368 amending power constraints",
+            "Chronological judicial evolution of 24 basic structure features"
+          ]
+        }
+      ],
+      "target_audience": [
+        "Judicial Services Aspirants (Civil Judge / ADJ Examinations)",
+        "UPSC Civil Services Law Optional Candidates",
+        "LL.B & LL.M Students preparing for University Finals",
+        "Practicing Advocates requiring a swift reference for constitutional citations"
+      ],
+      "learning_outcomes": [
+        "Master all 395 Articles with conceptual clarity and historical context",
+        "Cite over 140 landmark and recent Supreme Court judgments with precision",
+        "Draft structured, high-scoring judicial mains answers using the IRAC method",
+        "Quickly revise critical constitutional concepts using 45+ synthesized flowcharts"
+      ],
+      "is_featured": false,
+      "is_published": false,
+      "sales_count": 1420,
+      "rating": 4.95,
+      "reviews_count": 284,
+      "created_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-10-24T07:41:47.716Z"
+    },
+    {
+      "id": "prod-new-criminal-laws",
+      "title": "New Criminal Laws Handbook: BNS, BNSS & BSA Comparative Analysis (2024-2026)",
+      "slug": "new-criminal-laws-handbook-bns-bnss-bsa",
+      "short_description": "The definitive transition manual comparing IPC to Bharatiya Nyaya Sanhita, CrPC to Bharatiya Nagarik Suraksha Sanhita, and IEA to Bharatiya Sakshya Adhiniyam.",
+      "description": "India's criminal justice system has witnessed its most historic overhaul in over 160 years. This comprehensive handbook provides an authoritative, clause-by-clause comparative bridge between the colonial era penal statutes and the newly enacted criminal laws.\n\nIncludes complete concordances, section-mapping tables, highlighted substantive modifications, newly introduced offences (terrorism, organized crime, mob lynching), procedural revolutions (forensic evidence mandate, zero FIR formalization, e-summons), and electronic evidence admissibility guidelines under BSA.",
+      "price_paise": 79900,
+      "original_price_paise": 149900,
+      "category_id": "cat-2",
+      "cover_image_path": "/covers/criminal-law-cover.png",
+      "pdf_storage_path": "materials/new_criminal_laws_comparative_handbook.pdf",
+      "preview_storage_path": "previews/criminal_laws_preview.pdf",
+      "page_count": 420,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "BNS 2023 vs IPC 1860 Exhaustive Concordance",
+          "subtopics": [
+            "Newly inserted offences: Section 111 (Organized Crime), Section 113 (Terrorist acts)",
+            "Redefined offences against women and children",
+            "Community service as non-custodial punishment"
+          ]
+        },
+        {
+          "title": "BNSS 2023 Procedural Innovations",
+          "subtopics": [
+            "Mandatory videography during search and seizure",
+            "Preliminary inquiry under Section 173(3)",
+            "Police custody timelines and bail jurisprudence"
+          ]
+        },
+        {
+          "title": "Bharatiya Sakshya Adhiniyam (BSA)",
+          "subtopics": [
+            "Section 61-63 Electronic Records & Hash Value verification",
+            "Reformed burden of proof and presumption standards"
+          ]
+        }
+      ],
+      "target_audience": [
+        "All Judicial Services Aspirants adapting to the new syllabi",
+        "Trial Advocates, Public Prosecutors, and Legal Practitioners",
+        "Law Enforcement Officers and Police Academy Cadets",
+        "Law professors and students in criminal law semesters"
+      ],
+      "learning_outcomes": [
+        "Instantly cross-reference any old IPC/CrPC section to its exact new BNS/BNSS counterpart",
+        "Understand the procedural nuances of electronic evidence and video-recorded seizures",
+        "Draft anticipatory and regular bail applications under the new BNSS provisions"
+      ],
+      "is_featured": true,
+      "is_published": true,
+      "sales_count": 2180,
+      "rating": 4.98,
+      "reviews_count": 512,
+      "created_at": "2026-02-01T10:00:00Z",
+      "updated_at": "2026-10-18T14:30:00Z"
+    },
+    {
+      "id": "prod-cpc-flowcharts-notes",
+      "title": "Code of Civil Procedure (CPC) & Limitation Act: Visual Flowcharts & Case Notes",
+      "slug": "cpc-civil-procedure-flowcharts-notes",
+      "short_description": "De-mystify complex civil litigation procedure. Complete with 80+ visual flowcharts, Order-Rule cheat sheets, Res Judicata doctrines, and Execution templates.",
+      "description": "The Code of Civil Procedure 1908 is notoriously regarded as the most intimidating procedural code for students and litigators alike. This handbook breaks down every stage of a civil suit—from institution of plaint under Order VII to summons, written statement under Order VIII, framing of issues (Order XIV), interim injunctions (Order XXXIX), and appellate mechanisms.\n\nFeatures simplified visual diagrams for Section 10 (Res Sub-Judice) and Section 11 (Res Judicata), accompanied by exhaustive notes on the Law of Limitation 1963.",
+      "price_paise": 59900,
+      "original_price_paise": 99900,
+      "category_id": "cat-3",
+      "cover_image_path": "/covers/cpc-notes-cover.png",
+      "pdf_storage_path": "materials/cpc_limitation_master_notes.pdf",
+      "preview_storage_path": "previews/cpc_notes_preview.pdf",
+      "page_count": 290,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Jurisdiction & Res Judicata",
+          "subtopics": [
+            "Pecuniary, Territorial, and Subject-Matter Jurisdiction",
+            "Constructive Res Judicata (Explanation IV to Section 11)"
+          ]
+        },
+        {
+          "title": "Pleadings & Pre-Trial Stages",
+          "subtopics": [
+            "Order VI & VII Plaint requirements, Rejection vs Return",
+            "Order VIII Written Statement, Set-off, and Counter-claim"
+          ]
+        },
+        {
+          "title": "Interim Relief & Execution",
+          "subtopics": [
+            "Order XXXIX Temporary Injunctions test (Prima facie, Balance of convenience, Irreparable loss)",
+            "Order XXI Execution of Decrees master roadmap"
+          ]
+        },
+        {
+          "title": "Appeals, Reference, Review & Revision",
+          "subtopics": [
+            "Section 96 vs Section 100 Second Appeal substantial questions of law",
+            "Section 115 Civil Revision powers"
+          ]
+        }
+      ],
+      "target_audience": [
+        "Civil Judge Junior Division (CJJD) Aspirants",
+        "Young Civil Litigators embarking on district court practice",
+        "Law students preparing for Procedural Law examinations"
+      ],
+      "learning_outcomes": [
+        "Effortlessly visualize civil suit chronology from institution to final satisfaction",
+        "Master all 51 Orders and their pivotal rules without rote memorization",
+        "Write flawless procedural answers in judicial service mains"
+      ],
+      "is_featured": true,
+      "is_published": true,
+      "sales_count": 1120,
+      "rating": 4.91,
+      "reviews_count": 198,
+      "created_at": "2026-03-10T10:00:00Z",
+      "updated_at": "2026-09-25T11:00:00Z"
+    },
+    {
+      "id": "prod-judiciary-mains-writing",
+      "title": "Judiciary Mains Master Answer-Writing Framework & Judgment Writing",
+      "slug": "judiciary-mains-answer-writing-framework",
+      "short_description": "The proprietary answer-structuring methodology that helped 70+ students clear State Judicial Services. Includes civil & criminal judgment writing blueprints.",
+      "description": "Clearing the Judiciary Preliminary exam tests knowledge, but clearing the Mains examination tests presentation, legal synthesis, and authoritative articulation. \n\nThis masterclass manual contains 150+ solved high-scoring answers modeled across past papers of Delhi (DJS), Uttar Pradesh (UPPCS-J), Madhya Pradesh (MP-HJS/CJ), Haryana (HCS-J), and Rajasthan (RJS).\n\nIncludes dedicated sections for framing criminal charges under BNSS, framing civil issues under Order XIV CPC, and drafting complete criminal/civil judgments with evidence marshalling and sentencing considerations.",
+      "price_paise": 89900,
+      "original_price_paise": 169900,
+      "category_id": "cat-4",
+      "cover_image_path": "/covers/judiciary-mains-cover.png",
+      "pdf_storage_path": "materials/judiciary_mains_answer_writing_handbook.pdf",
+      "preview_storage_path": "previews/judiciary_mains_preview.pdf",
+      "page_count": 360,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "The 4-Pillar Answer Structuring Technique",
+          "subtopics": [
+            "Opening proposition and legislative provision",
+            "Doctrinal breakdown and essential ingredients",
+            "Leading and recent case law citation technique",
+            "Conclusive synthesis with statutory exceptions"
+          ]
+        },
+        {
+          "title": "Civil Judgment Writing Workshop",
+          "subtopics": [
+            "Title of the court, pleadings summary, issues framed, evidence appreciation, relief and costs"
+          ]
+        },
+        {
+          "title": "Criminal Judgment Writing Workshop",
+          "subtopics": [
+            "Prosecution version, defense plea, points for determination, benefit of doubt, sentencing guidelines"
+          ]
+        }
+      ],
+      "target_audience": [
+        "State Judicial Service Mains Candidates",
+        "Assistant Public Prosecutor (APP/APO) Aspirants",
+        "Judicial Clerkship Candidates (Supreme Court & High Courts)"
+      ],
+      "learning_outcomes": [
+        "Dramatically improve mains scores by 20-30% using professional structuring",
+        "Draft full-length Civil and Criminal judgments within the 45-minute exam window",
+        "Avoid common pitfalls that lead to deduction of marks in legal answers"
+      ],
+      "is_featured": true,
+      "is_published": true,
+      "sales_count": 1680,
+      "rating": 4.97,
+      "reviews_count": 340,
+      "created_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-10-15T09:00:00Z"
+    },
+    {
+      "id": "prod-landmark-case-summaries",
+      "title": "500 Landmark Supreme Court Judgments Compendium (1950 - 2026)",
+      "slug": "500-landmark-supreme-court-judgments-compendium",
+      "short_description": "Concise 1-page ratio decidendi briefs for the 500 most quoted Supreme Court judgments across Constitutional, Criminal, Property, and Corporate Jurisprudence.",
+      "description": "Never spend hours wading through 200-page judgments when preparing for exams or oral arguments. Each case summary is meticulously formatted into four essential sections:\n1. Facts of the Case\n2. Primary Legal Questions & Conflicting Precedents\n3. Ratio Decidendi (Authoritative Holding of the Bench)\n4. Key Obiter Dicta & Overruled Precedents.\n\nIncludes bench compositions, dissenting opinions of note, and chronological updates through October 2026.",
+      "price_paise": 54900,
+      "original_price_paise": 109900,
+      "category_id": "cat-5",
+      "cover_image_path": "/covers/case-laws-cover.png",
+      "pdf_storage_path": "materials/supreme_court_500_landmark_cases.pdf",
+      "preview_storage_path": "previews/cases_preview.pdf",
+      "page_count": 512,
+      "file_format": "PDF",
+      "topics": [
+        {
+          "title": "Constitutional Bench Decisions",
+          "subtopics": [
+            "Kesavananda Bharati, Maneka Gandhi, Indira Sawhney, KS Puttaswamy, Article 370 verification, Electoral Bonds judgment"
+          ]
+        },
+        {
+          "title": "Criminal Jurisprudence Precedents",
+          "subtopics": [
+            "Bachan Singh & Machhi Singh (Death Penalty 'Rarest of rare'), Arnesh Kumar (Arrest guidelines), Lalita Kumari (Mandatory FIR)"
+          ]
+        },
+        {
+          "title": "Commercial & Arbitration Landmarks",
+          "subtopics": [
+            "BALCO, Perkins Eastman, NN Global (Stamping & Arbitrability), Vidya Drolia"
+          ]
+        }
+      ],
+      "target_audience": [
+        "Judiciary and UPSC Law Aspirants",
+        "Advocates researching precedents for High Court and Supreme Court hearings",
+        "CLAT PG and LL.M Entrance Candidates"
+      ],
+      "learning_outcomes": [
+        "Instantly recall the correct case law citation for any legal proposition",
+        "Quote accurate paragraphs and judges' observations in written pleadings and exam answers"
+      ],
+      "is_featured": false,
+      "is_published": true,
+      "sales_count": 980,
+      "rating": 4.89,
+      "reviews_count": 145,
+      "created_at": "2026-04-05T10:00:00Z",
+      "updated_at": "2026-10-12T16:00:00Z"
+    },
+    {
+      "id": "prod-drafting-pleadings-handbook",
+      "title": "High Court & Supreme Court Legal Drafting: Writs, SLPs & Commercial Pleadings",
+      "slug": "legal-drafting-pleadings-handbook",
+      "short_description": "Over 60 battle-tested drafting templates used in actual High Court & Supreme Court filings. Includes Special Leave Petitions, Public Interest Litigations, and Bail Writs.",
+      "description": "A master procedural companion for young advocates and judicial aspirants who want to master real-world drafting. Includes editable boilerplate clauses, verification affidavits, urgency applications, and synopsis structuring.\n\nCovers Article 226 Writs (Quashing of FIR, challenging arbitrary administrative actions), Article 32 Writs before the Supreme Court, Article 136 Special Leave Petitions (Criminal & Civil), Commercial Summary Suits under Order XXXVII CPC, and Section 11 Arbitration Applications.",
+      "price_paise": 99900,
+      "original_price_paise": 189900,
+      "category_id": "cat-6",
+      "cover_image_path": "/covers/drafting-cover.png",
+      "pdf_storage_path": "materials/high_court_drafting_handbook_templates.pdf",
+      "preview_storage_path": "previews/drafting_preview.pdf",
+      "page_count": 320,
+      "file_format": "PDF & Editable Clause Companion",
+      "topics": [
+        {
+          "title": "High Court Constitutional Writs",
+          "subtopics": [
+            "Writ of Certiorari against quasi-judicial orders",
+            "Writ of Mandamus against statutory non-feasance",
+            "Bail Habeas Corpus filings"
+          ]
+        },
+        {
+          "title": "Supreme Court Special Leave Petitions (SLPs)",
+          "subtopics": [
+            "SLP (Civil) grounds of appeal and question of law",
+            "SLP (Criminal) against conviction or refusal of bail"
+          ]
+        },
+        {
+          "title": "Commercial & Civil Pleadings",
+          "subtopics": [
+            "Section 9 Interim Injunction petitions",
+            "Commercial Plaints with Statement of Truth"
+          ]
+        }
+      ],
+      "target_audience": [
+        "Junior Advocates entering litigation chambers",
+        "Law Students participating in Moot Court Competitions",
+        "Corporate In-House Counsel drafting dispute notices"
+      ],
+      "learning_outcomes": [
+        "Draft polished, courtroom-ready pleadings without clerical or jurisdictional flaws",
+        "Master the subtle art of articulating questions of law in appellate petitions"
+      ],
+      "is_featured": false,
+      "is_published": true,
+      "sales_count": 760,
+      "rating": 4.93,
+      "reviews_count": 118,
+      "created_at": "2026-05-12T10:00:00Z",
+      "updated_at": "2026-09-30T10:00:00Z"
+    }
+  ]
+}

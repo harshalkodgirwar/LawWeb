@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Product, Category } from "@/lib/db/types";
 import ProductCard from "./ProductCard";
 import { Search, Filter, SlidersHorizontal, BookOpen, AlertCircle, Sparkles, X } from "lucide-react";
@@ -18,15 +18,59 @@ export default function MarketplaceClient({
   initialCategory = "all",
 }: MarketplaceClientProps) {
   const profile = useProfile();
+  const [productsList, setProductsList] = useState<Product[]>(() =>
+    initialProducts.filter((p) => p.is_published !== false)
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("popularity");
   const [maxPrice, setMaxPrice] = useState<number>(120000); // 120000 paise = ₹1200
 
+  // Real-time synchronization when admin publishes or hides materials
+  useEffect(() => {
+    const syncProducts = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("admin_custom_products");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              setProductsList(parsed.filter((p: Product) => p.is_published !== false));
+              return;
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      fetch("/api/admin/products")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.products && Array.isArray(data.products)) {
+            setProductsList(data.products.filter((p: Product) => p.is_published !== false));
+          }
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("admin_products_updated", syncProducts);
+    window.addEventListener("storage", syncProducts);
+
+    // Initial sync
+    syncProducts();
+
+    return () => {
+      window.removeEventListener("admin_products_updated", syncProducts);
+      window.removeEventListener("storage", syncProducts);
+    };
+  }, []);
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    return initialProducts
+    return productsList
       .filter((product) => {
+        if (product.is_published === false) return false;
         // Category filter
         if (selectedCategory !== "all") {
           const matchCat =

@@ -9,7 +9,7 @@ interface FeaturedMaterialsProps {
 }
 
 export default function FeaturedMaterials({ products }: FeaturedMaterialsProps) {
-  const displayProducts = products.slice(0, 4);
+  const displayProducts = products.filter((p) => p.is_published !== false).slice(0, 4);
 
   return (
     <section className="py-20 bg-[#FDFBF7] border-b border-stone-200/80">

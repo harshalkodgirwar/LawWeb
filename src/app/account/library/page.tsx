@@ -5,7 +5,7 @@ import Link from "next/link";
 import BookCover from "@/components/materials/BookCover";
 import { SEED_PRODUCTS } from "@/lib/db/seed-data";
 import { Product } from "@/lib/db/types";
-import { Download, FileText, CheckCircle, Clock, BookOpen, AlertCircle, ShoppingBag } from "lucide-react";
+import { Download, FileText, CheckCircle, Clock, BookOpen, AlertCircle, ShoppingBag, Eye } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface LibraryItem {
@@ -22,76 +22,105 @@ export default function MyLibraryPage() {
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Check local demo purchases stored in localStorage
-    const storedPurchases = localStorage.getItem("demo_purchased_products");
-    let purchasedProductIds: string[] = [];
-
-    if (storedPurchases) {
-      try {
-        purchasedProductIds = JSON.parse(storedPurchases);
-      } catch {
-        // ignore
+    const loadLibrary = () => {
+      // 1. Check local purchases stored in localStorage
+      let purchasedProductIds: string[] = [];
+      if (typeof window !== "undefined") {
+        const storedPurchases = localStorage.getItem("demo_purchased_products");
+        if (storedPurchases) {
+          try {
+            purchasedProductIds = JSON.parse(storedPurchases);
+          } catch {
+            // ignore
+          }
+        }
       }
-    }
 
-    // If none purchased yet in this session, pre-populate with the 2 flagship materials for demo purposes
-    if (purchasedProductIds.length === 0) {
-      purchasedProductIds = ["prod-const-law-master", "prod-new-criminal-laws"];
-    }
+      // If no purchases made yet, keep library clean (no unwanted demo data)
+      if (purchasedProductIds.length === 0) {
+        setLibrary([]);
+        setLoading(false);
+        return;
+      }
 
-    const items: LibraryItem[] = purchasedProductIds
-      .map((id) => {
-        const prod = SEED_PRODUCTS.find((p) => p.id === id);
-        if (!prod) return null;
-        return {
-          id: `ent-${prod.id}`,
-          product: prod,
-          granted_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-          order_id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
-        };
-      })
-      .filter(Boolean) as LibraryItem[];
+      // 2. Load latest product list to check publishing status
+      let currentProducts: Product[] = [];
+      if (typeof window !== "undefined") {
+        const storedAdminProducts = localStorage.getItem("admin_custom_products");
+        if (storedAdminProducts) {
+          try {
+            currentProducts = JSON.parse(storedAdminProducts);
+          } catch {
+            // ignore
+          }
+        }
+      }
 
-    setLibrary(items);
-    setLoading(false);
+      const getProductById = (id: string): Product | undefined => {
+        const fromAdmin = currentProducts.find((p) => p.id === id);
+        if (fromAdmin) return fromAdmin;
+        return SEED_PRODUCTS.find((p) => p.id === id);
+      };
+
+      // 3. Build library, strictly excluding hidden/unpublished materials
+      const items: LibraryItem[] = purchasedProductIds
+        .map((id) => {
+          const prod = getProductById(id);
+          // If product does not exist or was hidden/unpublished by admin, do NOT show in user library
+          if (!prod || prod.is_published === false) return null;
+          return {
+            id: `ent-${prod.id}`,
+            product: prod,
+            granted_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+            order_id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+          };
+        })
+        .filter(Boolean) as LibraryItem[];
+
+      setLibrary(items);
+      setLoading(false);
+    };
+
+    loadLibrary();
+
+    // Listen to admin publish/hide updates in real-time
+    const handleAdminSync = () => {
+      loadLibrary();
+    };
+
+    window.addEventListener("admin_products_updated", handleAdminSync);
+    window.addEventListener("storage", handleAdminSync);
+
+    return () => {
+      window.removeEventListener("admin_products_updated", handleAdminSync);
+      window.removeEventListener("storage", handleAdminSync);
+    };
   }, []);
 
-  const handleDownload = async (productId: string, title: string) => {
+  const handleDownload = (productId: string, title: string) => {
     setDownloadingId(productId);
     setDownloadMessage(null);
 
     try {
-      // Call the secure download API endpoint
-      const res = await fetch(`/api/downloads/${productId}`);
-      const data = await res.json();
+      const downloadUrl = `/api/downloads/${productId}?action=download`;
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const safeTitle = title.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_");
+      a.download = `${safeTitle || "Study_Material"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to initiate secure download");
-      }
-
-      // If signed URL provided, open it or trigger download
-      if (data.downloadUrl) {
-        window.open(data.downloadUrl, "_blank");
-      } else {
-        // Simulated watermarked PDF download payload
-        const dummyPdfContent = `%PDF-1.4\n% Chambers of Adv. Harshal Kodgirwar\n% Licensed to: Verified Student\n% Material: ${title}\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 50 >>\nstream\nBT /F1 18 Tf 50 700 Td (${title}) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000015 00000 n \n0000000068 00000 n \n0000000125 00000 n \n0000000199 00000 n \ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n299\n%%EOF`;
-        const blob = new Blob([dummyPdfContent], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${title.replace(/\s+/g, "_")}_Official_Edition.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-
-      setDownloadMessage(`Secure signed download started for "${title}".`);
-    } catch (err: any) {
+      setDownloadMessage(`Downloading "${title}"... Please check your downloads folder.`);
+    } catch {
       setDownloadMessage(`Download initiated for "${title}".`);
     } finally {
-      setDownloadingId(null);
+      setTimeout(() => setDownloadingId(null), 1000);
     }
+  };
+
+  const handleOpenPdf = (productId: string) => {
+    window.open(`/api/downloads/${productId}?action=view`, "_blank");
   };
 
   return (
@@ -160,24 +189,36 @@ export default function MyLibraryPage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
+                <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
                   <Link
                     href={`/materials/${item.product.slug}`}
-                    className="text-xs text-stone-600 hover:text-[#0B132B] font-medium"
+                    className="text-xs text-stone-500 hover:text-[#0B132B] font-medium"
                   >
-                    View Curriculum
+                    View Details
                   </Link>
 
-                  <button
-                    onClick={() => handleDownload(item.product.id, item.product.title)}
-                    disabled={downloadingId === item.product.id}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white text-xs font-bold shadow-sm transition-all border border-[#C5A059]/40"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#E5C378]" />
-                    <span>
-                      {downloadingId === item.product.id ? "Securing Link..." : "Download PDF"}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenPdf(item.product.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all border border-stone-200"
+                      title="Open and read PDF directly in browser"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-stone-600" />
+                      <span>Open PDF</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDownload(item.product.id, item.product.title)}
+                      disabled={downloadingId === item.product.id}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white text-xs font-bold shadow-sm transition-all border border-[#C5A059]/40"
+                      title="Download PDF file to computer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#E5C378]" />
+                      <span>
+                        {downloadingId === item.product.id ? "Downloading..." : "Download PDF"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

@@ -15,9 +15,13 @@ import {
   LogOut,
   ArrowLeft,
   FileEdit,
+  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/lib/useProfile";
+import { getCurrentUser, clearCurrentUser, checkIsAdmin } from "@/lib/auth-helpers";
+
+import AdminLoginPortal from "@/components/admin/AdminLoginPortal";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,26 +31,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email?.includes("admin") || data?.user?.user_metadata?.role === "admin") {
+    const checkAuth = () => {
+      // 1. Check local session
+      const user = getCurrentUser();
+      if (checkIsAdmin(user)) {
         setAuthorized(true);
-      } else {
-        const demoUser = typeof window !== "undefined" ? localStorage.getItem("demo_user") : null;
-        if (demoUser) {
-          try {
-            const parsed = JSON.parse(demoUser);
-            if (parsed.role === "admin" || parsed.email?.includes("admin")) {
-              setAuthorized(true);
-            }
-          } catch {
-            // ignore
-          }
-        }
+        setChecking(false);
+        return;
       }
-      setChecking(false);
-    });
+
+      // 2. Check Supabase Auth
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (
+          data?.user?.email?.includes("admin") ||
+          data?.user?.user_metadata?.role === "admin"
+        ) {
+          setAuthorized(true);
+        } else {
+          setAuthorized(false);
+        }
+        setChecking(false);
+      });
+    };
+
+    checkAuth();
+
+    window.addEventListener("auth_state_changed", checkAuth);
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("auth_state_changed", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
   }, []);
+
+  const handleLogout = async () => {
+    clearCurrentUser();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
+    setAuthorized(false);
+    router.push("/admin");
+  };
 
   const navItems = [
     { name: "Analytics & Overview", href: "/admin", icon: BarChart3 },
@@ -63,6 +93,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         Verifying administrator credentials...
       </div>
     );
+  }
+
+  // Standalone dedicated Admin Login Page rendered directly on /admin when unauthenticated
+  if (!authorized) {
+    return <AdminLoginPortal onSuccess={() => setAuthorized(true)} />;
   }
 
   return (
@@ -100,6 +135,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {profile.name || "Adv. Harshal"} (Admin)
             </span>
           </div>
+          <div className="h-4 w-px bg-white/20" />
+          <button
+            onClick={handleLogout}
+            className="text-red-300 hover:text-red-200 flex items-center gap-1 transition-colors"
+            title="Sign out of Admin Console"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 

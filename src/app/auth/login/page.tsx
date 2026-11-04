@@ -3,59 +3,132 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Scale, Lock, Mail, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Scale, Lock, Mail, ArrowRight, AlertCircle, CheckCircle2, ShieldCheck, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  ADMIN_CREDENTIALS,
+  getRegisteredUsers,
+  setCurrentUser,
+  isSupabaseConfigured,
+  AuthUser,
+} from "@/lib/auth-helpers";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/account/library";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [demoRole, setDemoRole] = useState<"customer" | "admin" | null>(null);
+  const [success, setSuccess] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
+
+    const trimmedId = identifier.trim().toLowerCase();
+    const trimmedPw = password.trim();
 
     try {
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // 1. Check Hardcoded Admin Credentials
+      const isAdminUsername =
+        trimmedId === ADMIN_CREDENTIALS.username.toLowerCase() ||
+        trimmedId === ADMIN_CREDENTIALS.email.toLowerCase();
 
-      if (authError) {
-        // Fallback for local demo mode if credentials are mock/not yet connected
-        if (email.includes("admin")) {
-          const mockUser = {
-            id: "mock-admin-uuid",
-            email,
+      const isAdminPassword = ADMIN_CREDENTIALS.passwords.includes(trimmedPw);
+
+      if (isAdminUsername && isAdminPassword) {
+        const adminUser: AuthUser = {
+          id: "admin-master-id",
+          email: ADMIN_CREDENTIALS.email,
+          role: "admin",
+          user_metadata: {
+            full_name: ADMIN_CREDENTIALS.name,
             role: "admin",
-            user_metadata: { full_name: "Adv. Harshal (Admin)", role: "admin" },
-          };
-          localStorage.setItem("demo_user", JSON.stringify(mockUser));
-          router.push(redirectUrl);
-          return;
-        } else if (email) {
-          const mockUser = {
-            id: "mock-customer-uuid",
-            email,
-            role: "customer",
-            user_metadata: { full_name: email.split("@")[0], role: "customer" },
-          };
-          localStorage.setItem("demo_user", JSON.stringify(mockUser));
-          router.push(redirectUrl);
-          return;
-        }
-        throw authError;
+          },
+        };
+
+        setCurrentUser(adminUser);
+        setSuccess("Admin authenticated successfully! Entering console...");
+
+        const target = redirectUrl && redirectUrl !== "/account/library" ? redirectUrl : "/admin";
+        setTimeout(() => {
+          router.push(target);
+        }, 600);
+        return;
       }
 
-      router.push(redirectUrl);
+      if (isAdminUsername && !isAdminPassword) {
+        throw new Error("Invalid password for Admin. Please verify and try again.");
+      }
+
+      // 2. Check Registered Users in Local Store
+      const registeredUsers = getRegisteredUsers();
+      const foundUser = registeredUsers.find(
+        (u) => u.email.toLowerCase() === trimmedId
+      );
+
+      if (foundUser) {
+        if (foundUser.passwordHash !== trimmedPw) {
+          throw new Error("Incorrect password for this student account. Please try again.");
+        }
+
+        const studentUser: AuthUser = {
+          id: foundUser.id,
+          email: foundUser.email,
+          role: "customer",
+          user_metadata: {
+            full_name: foundUser.fullName,
+            role: "customer",
+          },
+        };
+
+        setCurrentUser(studentUser);
+        setSuccess(`Welcome back, ${foundUser.fullName}! Redirecting...`);
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 600);
+        return;
+      }
+
+      // 3. Fallback to Supabase Auth if configured
+      if (isSupabaseConfigured() && trimmedId.includes("@")) {
+        const supabase = createClient();
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: trimmedId,
+          password: trimmedPw,
+        });
+
+        if (data?.user) {
+          const userObj: AuthUser = {
+            id: data.user.id,
+            email: data.user.email || trimmedId,
+            role: data.user.user_metadata?.role === "admin" ? "admin" : "customer",
+            user_metadata: {
+              full_name: data.user.user_metadata?.full_name || trimmedId.split("@")[0],
+              role: data.user.user_metadata?.role === "admin" ? "admin" : "customer",
+            },
+          };
+          setCurrentUser(userObj);
+          setSuccess("Signed in successfully!");
+          setTimeout(() => {
+            router.push(redirectUrl);
+          }, 600);
+          return;
+        }
+
+        if (authError) {
+          throw authError;
+        }
+      }
+
+      throw new Error(
+        "No account found with this email or username. Please check your spelling or register for a free account."
+      );
     } catch (err: any) {
       setError(err.message || "Invalid credentials. Please verify and try again.");
     } finally {
@@ -63,17 +136,10 @@ function LoginForm() {
     }
   };
 
-  const handleDemoSignIn = (role: "customer" | "admin") => {
-    const mockEmail = role === "admin" ? "admin@advharshal.com" : "student@example.com";
-    const mockName = role === "admin" ? "Adv. Harshal (Admin)" : "Pooja Sharma (Student)";
-    const mockUser = {
-      id: role === "admin" ? "mock-admin-uuid" : "mock-student-uuid",
-      email: mockEmail,
-      role: role,
-      user_metadata: { full_name: mockName, role: role },
-    };
-    localStorage.setItem("demo_user", JSON.stringify(mockUser));
-    router.push(role === "admin" ? "/admin" : redirectUrl);
+  const handleQuickFillStudent = () => {
+    setIdentifier("student@example.com");
+    setPassword("student123");
+    setError("");
   };
 
   return (
@@ -85,35 +151,42 @@ function LoginForm() {
           </div>
         </Link>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#0B132B]">
-          Sign in to Your Account
+          Student & Customer Portal
         </h2>
         <p className="mt-1 text-xs text-stone-600">
-          Access your purchased study notes, download PDFs, and review past orders.
+          Sign in to access your purchased study notes, bare act guides, and download library.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-stone-200 shadow-md space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{success}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs sm:text-sm">
             <div>
               <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Email Address
+                Student Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   placeholder="student@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:bg-white text-stone-900"
                 />
               </div>
@@ -149,32 +222,24 @@ function LoginForm() {
               disabled={loading}
               className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white font-bold text-xs sm:text-sm shadow-md transition-all border border-[#C5A059]/40"
             >
-              <span>{loading ? "Authenticating..." : "Sign In to Library"}</span>
+              <span>{loading ? "Signing in..." : "Sign In to Library"}</span>
               <ArrowRight className="w-4 h-4 text-[#E5C378]" />
             </button>
           </form>
 
-          {/* 1-Click Demo Accounts for Instant Review */}
-          <div className="pt-4 border-t border-stone-100 space-y-2.5">
-            <span className="text-[11px] uppercase tracking-wider text-stone-400 font-mono block text-center">
-              Quick 1-Click Demo Sign-in
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoSignIn("customer")}
-                className="py-2 px-3 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium transition-colors"
-              >
-                Sign in as Student
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoSignIn("admin")}
-                className="py-2 px-3 rounded-lg bg-[#C5A059]/20 hover:bg-[#C5A059]/30 text-[#8E6D24] text-xs font-bold border border-[#C5A059]/40 transition-colors"
-              >
-                Sign in as Admin
-              </button>
+          {/* Preset Demo Student Account */}
+          <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-xs flex items-center justify-between">
+            <div>
+              <span className="block font-medium text-stone-800">Demo Student Account</span>
+              <span className="text-[11px] text-stone-500 font-mono">student@example.com / student123</span>
             </div>
+            <button
+              type="button"
+              onClick={handleQuickFillStudent}
+              className="px-3 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-[11px] font-semibold transition-colors"
+            >
+              Autofill
+            </button>
           </div>
 
           <div className="pt-2 text-center text-xs text-stone-600">
@@ -183,7 +248,21 @@ function LoginForm() {
               href={`/auth/register?redirect=${encodeURIComponent(redirectUrl)}`}
               className="font-bold text-[#0B132B] hover:underline"
             >
-              Register for Free
+              Sign Up for Free
+            </Link>
+          </div>
+
+          {/* Dedicated Link to Admin Console */}
+          <div className="pt-4 border-t border-stone-200 text-center">
+            <p className="text-[11px] text-stone-500 mb-2">
+              Advocate Chambers Staff or Administrator?
+            </p>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#080D1A] hover:bg-[#1C2541] text-[#E5C378] text-xs font-semibold border border-[#C5A059]/40 shadow-sm transition-all"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Chambers Admin Portal (/admin) &rarr;</span>
             </Link>
           </div>
         </div>
@@ -194,7 +273,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-xs font-mono text-stone-500">Loading sign in...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-xs font-mono text-stone-500">
+          Loading sign in...
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

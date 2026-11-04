@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Playfair_Display, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -71,13 +72,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${playfair.variable} ${sans.variable} ${mono.variable} scroll-smooth`}>
-      <head>
-        <script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          async
-        />
-      </head>
+      <head />
       <body className="min-h-screen bg-[#FDFBF7] text-[#1E2229] font-sans flex flex-col selection:bg-[#C5A059]/25 selection:text-[#0B132B]">
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
         <Suspense fallback={<div className="h-20 bg-[#080D1A]" />}>
           <Navbar />
         </Suspense>

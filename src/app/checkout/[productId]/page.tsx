@@ -45,18 +45,69 @@ function CheckoutContent({ params }: CheckoutPageProps) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState("");
   const [testModeModal, setTestModeModal] = useState(false);
   const [pendingRazorpayData, setPendingRazorpayData] = useState<any>(null);
+  const [notFoundState, setNotFoundState] = useState(false);
 
   useEffect(() => {
-    // 1. Fetch product
-    const found = SEED_PRODUCTS.find((p) => p.id === productId);
-    if (found) {
-      setProduct(found);
+    // 1. First check local storage & seed data for instant render
+    let found: Product | undefined;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("admin_custom_products");
+      if (stored) {
+        try {
+          const list = JSON.parse(stored);
+          found = list.find((p: Product) => p.id === productId || p.slug === productId);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (!found) {
+      found = SEED_PRODUCTS.find((p: Product) => p.id === productId || p.slug === productId);
     }
 
-    // 2. Fetch authenticated user
+    if (found) {
+      setProduct(found);
+      if (found.is_published === false) {
+        setError("This study material is currently set to draft mode and is not available for purchase.");
+      }
+    }
+
+    // 2. Authoritative sync with server products API (ensures ALL browser tabs stay in sync)
+    fetch("/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products)) {
+          // Synchronize localStorage in this tab
+          if (typeof window !== "undefined") {
+            localStorage.setItem("admin_custom_products", JSON.stringify(data.products));
+          }
+          const matched = data.products.find(
+            (p: Product) => p.id === productId || p.slug === productId
+          );
+          if (matched) {
+            setProduct(matched);
+            setNotFoundState(false);
+            if (matched.is_published === false) {
+              setError("This study material is currently set to draft mode and is not available for purchase.");
+            }
+          } else if (!found) {
+            setNotFoundState(true);
+          }
+        } else if (!found) {
+          setNotFoundState(true);
+        }
+      })
+      .catch(() => {
+        if (!found) {
+          setNotFoundState(true);
+        }
+      });
+
+    // 3. Fetch authenticated user
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
@@ -79,10 +130,34 @@ function CheckoutContent({ params }: CheckoutPageProps) {
     });
   }, [productId]);
 
+  if (notFoundState) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-stone-200 text-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h2 className="font-serif text-xl font-bold text-stone-900">Study Material Not Found</h2>
+          <p className="text-xs text-stone-500">
+            The requested study material could not be located or may have been deleted by the administrator.
+          </p>
+          <Link
+            href="/materials"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white text-xs font-bold transition-all shadow-sm"
+          >
+            <span>Browse All Study Materials</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
         <div className="text-center space-y-3">
+          <div className="w-7 h-7 border-2 border-[#C5A059] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs text-stone-500 font-mono">Loading checkout details...</p>
         </div>
       </div>
@@ -114,47 +189,59 @@ function CheckoutContent({ params }: CheckoutPageProps) {
 
       setPendingRazorpayData(orderData);
 
-      // Check if real Razorpay checkout script is loaded and key is valid
-      const hasRealKey = orderData.keyId && !orderData.keyId.includes("mock");
+      // 2. If genuine Razorpay order was created on Razorpay servers and SDK is available
+      if (orderData.isRazorpayLive && orderData.razorpayOrderId) {
+        // Ensure SDK is loaded
+        if (typeof window !== "undefined" && !window.Razorpay) {
+          await new Promise<void>((resolve) => {
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.body.appendChild(script);
+          });
+        }
 
-      if (typeof window !== "undefined" && window.Razorpay && hasRealKey) {
-        const options = {
-          key: orderData.keyId,
-          amount: orderData.amountPaise,
-          currency: orderData.currency,
-          name: `${profile.name || "Adv. Harshal Kodgirwar"} Chambers`,
-          description: product.title,
-          order_id: orderData.razorpayOrderId,
-          prefill: {
-            name: fullName || "Law Student",
-            email: email || "student@example.com",
-            contact: phone || "",
-          },
-          theme: {
-            color: "#0B132B",
-          },
-          handler: async function (response: any) {
-            await handleVerifyPayment(
-              orderData.orderId,
-              response.razorpay_order_id,
-              response.razorpay_payment_id,
-              response.razorpay_signature
-            );
-          },
-          modal: {
-            ondismiss: function () {
-              setLoading(false);
+        if (typeof window !== "undefined" && window.Razorpay) {
+          const options = {
+            key: orderData.keyId,
+            amount: orderData.amountPaise,
+            currency: orderData.currency,
+            name: `${profile.name || "Adv. Harshal Kodgirwar"} Chambers`,
+            description: product.title,
+            order_id: orderData.razorpayOrderId,
+            prefill: {
+              name: fullName || "Law Student",
+              email: email || "student@example.com",
+              contact: phone || "",
             },
-          },
-        };
+            theme: {
+              color: "#0B132B",
+            },
+            handler: async function (response: any) {
+              await handleVerifyPayment(
+                orderData.orderId,
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature
+              );
+            },
+            modal: {
+              ondismiss: function () {
+                setLoading(false);
+              },
+            },
+          };
 
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        // Test mode simulator modal (allows full testing of verification & entitlement flow without live credentials)
-        setTestModeModal(true);
-        setLoading(false);
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+          return;
+        }
       }
+
+      // 3. Fallback to Test Simulator Modal (allows full testing without getting stuck on invalid/unmatched credentials)
+      setTestModeModal(true);
+      setLoading(false);
     } catch (err: any) {
       setError(err.message || "Payment initiation failed");
       setLoading(false);
@@ -315,12 +402,14 @@ function CheckoutContent({ params }: CheckoutPageProps) {
                 {/* Terms agreement */}
                 <div className="pt-2 flex items-start gap-2.5 text-xs text-stone-600">
                   <input
+                    id="terms-checkbox"
                     type="checkbox"
                     required
-                    defaultChecked
-                    className="mt-0.5 accent-[#C5A059] rounded"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="mt-0.5 accent-[#C5A059] rounded cursor-pointer w-4 h-4"
                   />
-                  <span>
+                  <label htmlFor="terms-checkbox" className="cursor-pointer select-none">
                     I agree to the{" "}
                     <Link href="/terms" className="underline font-medium text-[#0B132B]">
                       Terms & Conditions
@@ -330,7 +419,7 @@ function CheckoutContent({ params }: CheckoutPageProps) {
                       Refund Policy
                     </Link>
                     . I understand digital downloads are for single personal use.
-                  </span>
+                  </label>
                 </div>
 
                 <button
@@ -448,8 +537,23 @@ function CheckoutContent({ params }: CheckoutPageProps) {
               </div>
             </div>
 
+            {pendingRazorpayData?.razorpayError && (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Razorpay API Diagnostics</span>
+                </div>
+                <p className="text-[11px] text-amber-700 leading-relaxed font-mono">
+                  {pendingRazorpayData.razorpayError}
+                </p>
+                <p className="text-[11px] text-amber-800 pt-1 border-t border-amber-200/60">
+                  Your Razorpay Key ID and Secret in <code className="bg-amber-100 px-1 py-0.5 rounded">.env</code> do not match. You can still test and verify the complete purchase and library download flow below!
+                </p>
+              </div>
+            )}
+
             <p className="text-xs text-stone-600 leading-relaxed">
-              You are running in Razorpay development test mode. Click below to simulate a successful payment captured via UPI / Net Banking and execute the server-side HMAC signature verification.
+              Click below to simulate a successful payment captured via UPI / Net Banking and test the order fulfillment and library entitlement flow.
             </p>
 
             <div className="p-3 bg-stone-50 rounded-xl text-xs space-y-1 font-mono text-stone-700">

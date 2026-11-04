@@ -3,53 +3,85 @@
 import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, BookOpen, Download, ArrowRight, ShieldCheck, FileText, ShoppingBag } from "lucide-react";
+import { CheckCircle2, BookOpen, Download, ArrowRight, ShieldCheck, FileText, ShoppingBag, Eye } from "lucide-react";
 import { SEED_PRODUCTS } from "@/lib/db/seed-data";
 import { formatINR } from "@/lib/utils";
 
 function CheckoutConfirmationContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId") || "ORD-" + Math.floor(100000 + Math.random() * 900000);
+  const paramOrderId = searchParams.get("orderId");
   const productId = searchParams.get("productId") || "prod-const-law-master";
 
+  const [orderId, setOrderId] = useState<string>(paramOrderId || "ORD-PROCESSING");
   const [product, setProduct] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const found = SEED_PRODUCTS.find((p) => p.id === productId) || SEED_PRODUCTS[0];
-    setProduct(found);
-  }, [productId]);
+    if (!paramOrderId) {
+      setOrderId("ORD-" + Math.floor(100000 + Math.random() * 900000));
+    } else {
+      setOrderId(paramOrderId);
+    }
 
-  const handleInstantDownload = async () => {
+    // 1. Check custom admin products in localStorage
+    let customList: any[] = [];
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("admin_custom_products");
+      if (stored) {
+        try {
+          customList = JSON.parse(stored);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    const found =
+      customList.find((p) => p.id === productId) ||
+      SEED_PRODUCTS.find((p) => p.id === productId) ||
+      SEED_PRODUCTS[0];
+    setProduct(found);
+
+    // 2. Also fetch latest from server store
+    fetch("/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products)) {
+          const matched = data.products.find((p: any) => p.id === productId);
+          if (matched) {
+            setProduct(matched);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [paramOrderId, productId]);
+
+  const handleInstantDownload = () => {
     if (!product) return;
     setDownloading(true);
 
     try {
-      const res = await fetch(`/api/downloads/${product.id}`);
-      const data = await res.json();
+      const downloadUrl = `/api/downloads/${product.id}?action=download`;
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const safeTitle = product.title.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_");
+      a.download = `${safeTitle || "Study_Material"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-      if (data.downloadUrl) {
-        window.open(data.downloadUrl, "_blank");
-      } else {
-        // Direct stream download
-        const dummyPdfContent = `%PDF-1.4\n% Chambers of Adv. Harshal Kodgirwar\n% Licensed Official Edition\n% Material: ${product.title}\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 50 >>\nstream\nBT /F1 18 Tf 50 700 Td (${product.title}) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000015 00000 n \n0000000068 00000 n \n0000000125 00000 n \n0000000199 00000 n \ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n299\n%%EOF`;
-        const blob = new Blob([dummyPdfContent], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${product.title.replace(/\s+/g, "_")}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-      setDownloadMessage(`Download initiated for ${product.title}.`);
+      setDownloadMessage(`Downloading official PDF for "${product.title}"... Please check your downloads folder.`);
     } catch {
-      setDownloadMessage(`Download initiated.`);
+      setDownloadMessage(`Download initiated for ${product.title}.`);
     } finally {
-      setDownloading(false);
+      setTimeout(() => setDownloading(false), 1000);
     }
+  };
+
+  const handleOpenPdf = () => {
+    if (!product) return;
+    window.open(`/api/downloads/${product.id}?action=view`, "_blank");
   };
 
   return (
@@ -105,14 +137,24 @@ function CheckoutConfirmationContent() {
 
           {/* Action CTAs */}
           <div className="space-y-3 pt-2">
-            <button
-              onClick={handleInstantDownload}
-              disabled={downloading}
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white font-bold text-xs sm:text-sm shadow-md transition-all border border-[#C5A059]/40"
-            >
-              <Download className="w-4 h-4 text-[#E5C378]" />
-              <span>{downloading ? "Preparing PDF..." : "Download Official PDF Now"}</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleInstantDownload}
+                disabled={downloading}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0B132B] hover:bg-[#1C2541] text-white font-bold text-xs sm:text-sm shadow-md transition-all border border-[#C5A059]/40"
+              >
+                <Download className="w-4 h-4 text-[#E5C378]" />
+                <span>{downloading ? "Downloading..." : "Download Official PDF"}</span>
+              </button>
+
+              <button
+                onClick={handleOpenPdf}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-[#0B132B] font-bold text-xs sm:text-sm shadow-sm transition-all border border-[#C5A059]/50"
+              >
+                <Eye className="w-4 h-4 text-[#C5A059]" />
+                <span>Open & Read in Browser</span>
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Link

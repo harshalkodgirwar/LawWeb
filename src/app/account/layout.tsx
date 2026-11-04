@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, ShoppingBag, User, LogOut, ShieldCheck, Scale, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUser, clearCurrentUser, checkIsAdmin } from "@/lib/auth-helpers";
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -13,37 +14,50 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUser(data.user);
-        if (data.user.email?.includes("admin") || data.user.user_metadata?.role === "admin") {
-          setIsAdmin(true);
-        }
-      } else {
-        const demoUser = typeof window !== "undefined" ? localStorage.getItem("demo_user") : null;
-        if (demoUser) {
-          try {
-            const parsed = JSON.parse(demoUser);
-            setUser(parsed);
-            if (parsed.role === "admin" || parsed.email?.includes("admin")) {
-              setIsAdmin(true);
-            }
-          } catch {
-            // ignore
-          }
-        }
+    const syncSession = () => {
+      const localUser = getCurrentUser();
+      if (localUser) {
+        setUser(localUser);
+        setIsAdmin(checkIsAdmin(localUser));
+        return;
       }
-    });
+
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          setUser(data.user);
+          if (data.user.email?.includes("admin") || data.user.user_metadata?.role === "admin") {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+        }
+      });
+    };
+
+    syncSession();
+
+    window.addEventListener("auth_state_changed", syncSession);
+    window.addEventListener("storage", syncSession);
+
+    return () => {
+      window.removeEventListener("auth_state_changed", syncSession);
+      window.removeEventListener("storage", syncSession);
+    };
   }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("demo_user");
+    clearCurrentUser();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
     }
-    window.location.href = "/";
+    router.push("/auth/login");
   };
 
   const navItems = [
